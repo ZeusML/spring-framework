@@ -37,6 +37,10 @@ import org.springframework.beans.BeansException;
  * If bean instance interaction is required, consider implementing
  * {@link BeanPostProcessor} instead.
  *
+ * postProcessBeanFactory方法
+ * 工作于 BeanDefinition 加载完成之后，Bean 实例化之前，其主要作用是对加载 BeanDefinition 进行修改
+ * BeanFactoryPostProcessor 是与 BeanDefinition 打交道的，如果想要与 Bean 打交道，请使用 BeanPostProcessor 。
+ *
  * @author Juergen Hoeller
  * @since 06.07.2003
  * @see BeanPostProcessor
