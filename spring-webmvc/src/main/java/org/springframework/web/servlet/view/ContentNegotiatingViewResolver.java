@@ -77,6 +77,7 @@ import org.springframework.web.servlet.ViewResolver;
  * that has the {@code text/html} content type (based on the {@code html} file extension). A request
  * for {@code /view} with a {@code text/html} request {@code Accept} header has the same result.
  *
+ * 基于内容类型来获取对应 View 的 ViewResolver 实现类。
  * @author Arjen Poutsma
  * @author Juergen Hoeller
  * @author Rossen Stoyanchev
@@ -91,8 +92,14 @@ public class ContentNegotiatingViewResolver extends WebApplicationObjectSupport
 	@Nullable
 	private ContentNegotiationManager contentNegotiationManager;
 
+	/**
+	 * ContentNegotiationManager 的工厂，用于创建 {@link #contentNegotiationManager} 对象
+	 */
 	private final ContentNegotiationManagerFactoryBean cnmFactoryBean = new ContentNegotiationManagerFactoryBean();
 
+	/**
+	 * 在找不到 View 对象时，返回 {@link #NOT_ACCEPTABLE_VIEW}
+	 */
 	private boolean useNotAcceptableStatusCode = false;
 
 	@Nullable
@@ -181,8 +188,10 @@ public class ContentNegotiatingViewResolver extends WebApplicationObjectSupport
 
 	@Override
 	protected void initServletContext(ServletContext servletContext) {
+		// <1> 扫描所有 ViewResolver 的 Bean 们
 		Collection<ViewResolver> matchingBeans =
 				BeanFactoryUtils.beansOfTypeIncludingAncestors(obtainApplicationContext(), ViewResolver.class).values();
+		// <1.1> 情况一，如果 viewResolvers 为空，则将 matchingBeans 作为 viewResolvers 。
 		if (this.viewResolvers == null) {
 			this.viewResolvers = new ArrayList<>(matchingBeans.size());
 			for (ViewResolver viewResolver : matchingBeans) {
@@ -191,17 +200,20 @@ public class ContentNegotiatingViewResolver extends WebApplicationObjectSupport
 				}
 			}
 		}
+		// <1.2> 情况二，如果 viewResolvers 非空，则和 matchingBeans 进行比对，判断哪些未进行初始化，那么需要进行初始化
 		else {
 			for (int i = 0; i < this.viewResolvers.size(); i++) {
 				ViewResolver vr = this.viewResolvers.get(i);
 				if (matchingBeans.contains(vr)) {
 					continue;
 				}
+				// 不存在在 matchingBeans 中，说明还未初始化，则进行初始化
 				String name = vr.getClass().getName() + i;
 				obtainApplicationContext().getAutowireCapableBeanFactory().initializeBean(vr, name);
 			}
 
 		}
+		// <1.3> 排序 viewResolvers 数组
 		AnnotationAwareOrderComparator.sort(this.viewResolvers);
 		this.cnmFactoryBean.setServletContext(servletContext);
 	}
@@ -222,9 +234,12 @@ public class ContentNegotiatingViewResolver extends WebApplicationObjectSupport
 	public View resolveViewName(String viewName, Locale locale) throws Exception {
 		RequestAttributes attrs = RequestContextHolder.getRequestAttributes();
 		Assert.state(attrs instanceof ServletRequestAttributes, "No current ServletRequestAttributes");
+		// <1> 获得 MediaType 数组
 		List<MediaType> requestedMediaTypes = getMediaTypes(((ServletRequestAttributes) attrs).getRequest());
 		if (requestedMediaTypes != null) {
+			// <2.1> 获得匹配的 View 数组
 			List<View> candidateViews = getCandidateViews(viewName, locale, requestedMediaTypes);
+			// <2.2> 筛选最匹配的 View 对象
 			View bestView = getBestView(candidateViews, requestedMediaTypes, attrs);
 			if (bestView != null) {
 				return bestView;
@@ -234,6 +249,7 @@ public class ContentNegotiatingViewResolver extends WebApplicationObjectSupport
 		String mediaTypeInfo = logger.isDebugEnabled() && requestedMediaTypes != null ?
 				" given " + requestedMediaTypes.toString() : "";
 
+		// <3> 如果匹配不到 View 对象，则根据 useNotAcceptableStatusCode ，返回 NOT_ACCEPTABLE_VIEW 或 null 。
 		if (this.useNotAcceptableStatusCode) {
 			if (logger.isDebugEnabled()) {
 				logger.debug("Using 406 NOT_ACCEPTABLE" + mediaTypeInfo);
@@ -255,9 +271,13 @@ public class ContentNegotiatingViewResolver extends WebApplicationObjectSupport
 	protected List<MediaType> getMediaTypes(HttpServletRequest request) {
 		Assert.state(this.contentNegotiationManager != null, "No ContentNegotiationManager set");
 		try {
+			// 创建 ServletWebRequest 对象
 			ServletWebRequest webRequest = new ServletWebRequest(request);
+			// 从请求中，获得可接受的 MediaType 数组。默认实现是，从请求头 ACCEPT 中获取
 			List<MediaType> acceptableMediaTypes = this.contentNegotiationManager.resolveMediaTypes(webRequest);
+			// 获得可产生的 MediaType 数组
 			List<MediaType> producibleMediaTypes = getProducibleMediaTypes(request);
+			// 通过 acceptableTypes 来比对，将符合的 producibleType 添加到 compatibleMediaTypes 结果数组中
 			Set<MediaType> compatibleMediaTypes = new LinkedHashSet<>();
 			for (MediaType acceptable : acceptableMediaTypes) {
 				for (MediaType producible : producibleMediaTypes) {
@@ -266,6 +286,7 @@ public class ContentNegotiatingViewResolver extends WebApplicationObjectSupport
 					}
 				}
 			}
+			// 按照 MediaType 的 specificity、quality 排序
 			List<MediaType> selectedMediaTypes = new ArrayList<>(compatibleMediaTypes);
 			MediaType.sortBySpecificityAndQuality(selectedMediaTypes);
 			return selectedMediaTypes;
@@ -303,6 +324,7 @@ public class ContentNegotiatingViewResolver extends WebApplicationObjectSupport
 			throws Exception {
 
 		List<View> candidateViews = new ArrayList<>();
+		// <1> 来源一，通过 viewResolvers 解析出 View 数组结果，添加到 candidateViews 中
 		if (this.viewResolvers != null) {
 			Assert.state(this.contentNegotiationManager != null, "No ContentNegotiationManager set");
 			for (ViewResolver viewResolver : this.viewResolvers) {
@@ -310,6 +332,8 @@ public class ContentNegotiatingViewResolver extends WebApplicationObjectSupport
 				if (view != null) {
 					candidateViews.add(view);
 				}
+				// <1.3> 情况二，带有文拓展后缀的方式，获得 View 对象，添加到 candidateViews 中
+				// <1.3.1> 遍历 MediaType 数组
 				for (MediaType requestedMediaType : requestedMediaTypes) {
 					List<String> extensions = this.contentNegotiationManager.resolveFileExtensions(requestedMediaType);
 					for (String extension : extensions) {
@@ -322,6 +346,7 @@ public class ContentNegotiatingViewResolver extends WebApplicationObjectSupport
 				}
 			}
 		}
+		// <2> 来源二，添加 defaultViews 到 candidateViews 中
 		if (!CollectionUtils.isEmpty(this.defaultViews)) {
 			candidateViews.addAll(this.defaultViews);
 		}
@@ -330,6 +355,7 @@ public class ContentNegotiatingViewResolver extends WebApplicationObjectSupport
 
 	@Nullable
 	private View getBestView(List<View> candidateViews, List<MediaType> requestedMediaTypes, RequestAttributes attrs) {
+		// <1> 遍历 candidateView 数组，如果有重定向的 View 类型，则返回它
 		for (View candidateView : candidateViews) {
 			if (candidateView instanceof SmartView) {
 				SmartView smartView = (SmartView) candidateView;
@@ -338,9 +364,12 @@ public class ContentNegotiatingViewResolver extends WebApplicationObjectSupport
 				}
 			}
 		}
+		// <2> 遍历 requestedMediaTypes 数组
 		for (MediaType mediaType : requestedMediaTypes) {
+			// <2> 遍历 candidateViews 数组
 			for (View candidateView : candidateViews) {
 				if (StringUtils.hasText(candidateView.getContentType())) {
+					// <2.1> 如果 MediaType 类型匹配，则返回该 View 对象
 					MediaType candidateContentType = MediaType.parseMediaType(candidateView.getContentType());
 					if (mediaType.isCompatibleWith(candidateContentType)) {
 						if (logger.isDebugEnabled()) {

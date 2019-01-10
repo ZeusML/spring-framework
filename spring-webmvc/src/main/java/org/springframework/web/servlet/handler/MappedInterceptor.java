@@ -41,6 +41,14 @@ import org.springframework.web.servlet.ModelAndView;
  * @author Rossen Stoyanchev
  * @author Brian Clozel
  * @since 3.0
+ *
+ * <mvc:interceptors>
+ *     <mvc:interceptor>
+ *         <mvc:mapping path="/interceptor/**" />
+ *         <mvc:exclude-mapping path="/interceptor/b/*" />
+ *         <bean class="com.elim.learn.spring.mvc.interceptor.MyInterceptor" />
+ *     </mvc:interceptor>
+ * </mvc:interceptors>
  */
 public final class MappedInterceptor implements HandlerInterceptor {
 
@@ -50,6 +58,9 @@ public final class MappedInterceptor implements HandlerInterceptor {
 	@Nullable
 	private final String[] excludePatterns;
 
+	/**
+	 * HandlerInterceptor 拦截器对象
+	 */
 	private final HandlerInterceptor interceptor;
 
 	@Nullable
@@ -145,6 +156,7 @@ public final class MappedInterceptor implements HandlerInterceptor {
 	 */
 	public boolean matches(String lookupPath, PathMatcher pathMatcher) {
 		PathMatcher pathMatcherToUse = (this.pathMatcher != null ? this.pathMatcher : pathMatcher);
+		// 先排除
 		if (!ObjectUtils.isEmpty(this.excludePatterns)) {
 			for (String pattern : this.excludePatterns) {
 				if (pathMatcherToUse.match(pattern, lookupPath)) {
@@ -155,6 +167,7 @@ public final class MappedInterceptor implements HandlerInterceptor {
 		if (ObjectUtils.isEmpty(this.includePatterns)) {
 			return true;
 		}
+		// 后包含
 		for (String pattern : this.includePatterns) {
 			if (pathMatcherToUse.match(pattern, lookupPath)) {
 				return true;

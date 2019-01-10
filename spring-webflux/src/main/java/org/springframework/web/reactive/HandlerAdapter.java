@@ -29,6 +29,8 @@ import org.springframework.web.server.ServerWebExchange;
  * @author Rossen Stoyanchev
  * @author Sebastien Deleuze
  * @since 5.0
+ *
+ * 处理器适配器接口
  */
 public interface HandlerAdapter {
 

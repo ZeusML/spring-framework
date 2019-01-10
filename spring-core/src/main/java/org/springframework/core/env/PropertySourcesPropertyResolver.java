@@ -84,6 +84,7 @@ public class PropertySourcesPropertyResolver extends AbstractPropertyResolver {
 				}
 				Object value = propertySource.getProperty(key);
 				if (value != null) {
+					// 如果解决嵌套占位符，解析占位符
 					if (resolveNestedPlaceholders && value instanceof String) {
 						value = resolveNestedPlaceholders((String) value);
 					}

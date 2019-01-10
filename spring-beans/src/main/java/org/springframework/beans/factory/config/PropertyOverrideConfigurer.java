@@ -126,6 +126,7 @@ public class PropertyOverrideConfigurer extends PropertyResourceConfigurer {
 	protected void processKey(ConfigurableListableBeanFactory factory, String key, String value)
 			throws BeansException {
 
+		// 判断是否存在 "."，即获取其索引位置
 		int separatorIndex = key.indexOf(this.beanNameSeparator);
 		if (separatorIndex == -1) {
 			throw new BeanInitializationException("Invalid key '" + key +

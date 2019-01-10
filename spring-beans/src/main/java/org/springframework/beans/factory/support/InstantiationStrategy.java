@@ -29,6 +29,9 @@ import org.springframework.lang.Nullable;
  * <p>This is pulled out into a strategy as various approaches are possible,
  * including using CGLIB to create subclasses on the fly to support Method Injection.
  *
+ * InstantiationStrategy 接口定义了 Spring Bean 实例化的策略，
+ * 根据创建对象情况的不同，提供了三种策略：无参构造方法、有参构造方法、工厂方法
+ *
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @since 1.1
@@ -44,6 +47,8 @@ public interface InstantiationStrategy {
 	 * @param owner the owning BeanFactory
 	 * @return a bean instance for this bean definition
 	 * @throws BeansException if the instantiation attempt failed
+	 *
+	 * 默认构造方法
 	 */
 	Object instantiate(RootBeanDefinition bd, @Nullable String beanName, BeanFactory owner)
 			throws BeansException;
@@ -60,6 +65,8 @@ public interface InstantiationStrategy {
 	 * @param args the constructor arguments to apply
 	 * @return a bean instance for this bean definition
 	 * @throws BeansException if the instantiation attempt failed
+	 *
+	 * 指定构造方法
 	 */
 	Object instantiate(RootBeanDefinition bd, @Nullable String beanName, BeanFactory owner,
 			Constructor<?> ctor, Object... args) throws BeansException;
@@ -78,6 +85,8 @@ public interface InstantiationStrategy {
 	 * @param args the factory method arguments to apply
 	 * @return a bean instance for this bean definition
 	 * @throws BeansException if the instantiation attempt failed
+	 *
+	 * 工厂方法
 	 */
 	Object instantiate(RootBeanDefinition bd, @Nullable String beanName, BeanFactory owner,
 			@Nullable Object factoryBean, Method factoryMethod, Object... args)

@@ -36,6 +36,7 @@ import org.springframework.web.servlet.ViewResolver;
 /**
  * A {@link org.springframework.web.servlet.ViewResolver} that delegates to others.
  *
+ * 复合的 ViewResolver 实现类
  * @author Sebastien Deleuze
  * @author Rossen Stoyanchev
  * @since 4.1

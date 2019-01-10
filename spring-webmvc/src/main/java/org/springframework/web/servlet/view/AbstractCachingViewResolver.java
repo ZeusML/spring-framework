@@ -37,6 +37,7 @@ import org.springframework.web.servlet.ViewResolver;
  * <p>Subclasses need to implement the {@link #loadView} template method,
  * building the View object for a specific view name and locale.
  *
+ * 提供通用的缓存的 ViewResolver 抽象类。对于相同的视图名，返回的是相同的 View 对象，所以通过缓存，可以进一步提供性能
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @see #loadView
@@ -74,6 +75,7 @@ public abstract class AbstractCachingViewResolver extends WebApplicationObjectSu
 			new LinkedHashMap<Object, View>(DEFAULT_CACHE_LIMIT, 0.75f, true) {
 				@Override
 				protected boolean removeEldestEntry(Map.Entry<Object, View> eldest) {
+					// 如果超过上限，则从 viewAccessCache 中也移除
 					if (size() > getCacheLimit()) {
 						viewAccessCache.remove(eldest.getKey());
 						return true;

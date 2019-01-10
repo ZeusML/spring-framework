@@ -46,8 +46,18 @@ import org.springframework.aop.SpringProxy;
 @SuppressWarnings("serial")
 public class DefaultAopProxyFactory implements AopProxyFactory, Serializable {
 
+	/**
+	 *
+	 * @param config the AOP configuration in the form of an
+	 * AdvisedSupport object  里面存储了具体的Advisor。
+	 */
 	@Override
 	public AopProxy createAopProxy(AdvisedSupport config) throws AopConfigException {
+		/**
+		 *	1.ProxyConfig的isOptimize方法为true，这表示让Spring自己去优化而不是用户指定
+		 *	2.isProxyTargetClass方法为true，这表示配置了proxy-target-class="true"
+		 *	3.hasNoUserSuppliedProxyInterfaces方法执行结果为true，这表示<bean>对象没有实现任何接口或者实现的接口是SpringProxy接口
+		 */
 		if (config.isOptimize() || config.isProxyTargetClass() || hasNoUserSuppliedProxyInterfaces(config)) {
 			Class<?> targetClass = config.getTargetClass();
 			if (targetClass == null) {

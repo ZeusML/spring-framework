@@ -69,6 +69,7 @@ public class HandlerExecutionChain {
 		if (handler instanceof HandlerExecutionChain) {
 			HandlerExecutionChain originalChain = (HandlerExecutionChain) handler;
 			this.handler = originalChain.getHandler();
+			// 初始化到 interceptorList 中
 			this.interceptorList = new ArrayList<>();
 			CollectionUtils.mergeArrayIntoCollection(originalChain.getInterceptors(), this.interceptorList);
 			CollectionUtils.mergeArrayIntoCollection(interceptors, this.interceptorList);
@@ -129,14 +130,21 @@ public class HandlerExecutionChain {
 	 * that this interceptor has already dealt with the response itself.
 	 */
 	boolean applyPreHandle(HttpServletRequest request, HttpServletResponse response) throws Exception {
+		// <1> 获得拦截器数组
 		HandlerInterceptor[] interceptors = getInterceptors();
 		if (!ObjectUtils.isEmpty(interceptors)) {
+			// <2> 遍历拦截器数组
 			for (int i = 0; i < interceptors.length; i++) {
 				HandlerInterceptor interceptor = interceptors[i];
+				// <3> 前置处理
 				if (!interceptor.preHandle(request, response, this.handler)) {
+					// <3.1> 触发已完成处理
+					//此处不是触发当前拦截器的已完成逻辑，
+					// 而是触发 [0, interceptorIndex) 这几个拦截器已完成的逻辑( 不包括当前这个拦截器 )，并且是按照倒序执行的。
 					triggerAfterCompletion(request, response, null);
 					return false;
 				}
+				// <3.2> 标记 interceptorIndex 位置
 				this.interceptorIndex = i;
 			}
 		}
@@ -151,7 +159,7 @@ public class HandlerExecutionChain {
 
 		HandlerInterceptor[] interceptors = getInterceptors();
 		if (!ObjectUtils.isEmpty(interceptors)) {
-			for (int i = interceptors.length - 1; i >= 0; i--) {
+			for (int i = interceptors.length - 1; i >= 0; i--) { // 倒序
 				HandlerInterceptor interceptor = interceptors[i];
 				interceptor.postHandle(request, response, this.handler, mv);
 			}
@@ -168,9 +176,10 @@ public class HandlerExecutionChain {
 
 		HandlerInterceptor[] interceptors = getInterceptors();
 		if (!ObjectUtils.isEmpty(interceptors)) {
-			for (int i = this.interceptorIndex; i >= 0; i--) {
+			for (int i = this.interceptorIndex; i >= 0; i--) {// 倒序！！！
 				HandlerInterceptor interceptor = interceptors[i];
 				try {
+					// 已完成处理
 					interceptor.afterCompletion(request, response, this.handler, ex);
 				}
 				catch (Throwable ex2) {

@@ -36,6 +36,9 @@ import java.beans.PropertyDescriptor;
  * is "false", to avoid side effects caused by getter method invocations.
  * Turn this to "true" to expose present property values to custom editors.
  *
+ * BeanWrapper 体系相比于 Spring 中其他体系是比较简单的，
+ * 它作为 BeanDefinition 向 Bean 转换过程中的中间产物，承载了 Bean 实例的包装、类型转换、属性的设置以及访问等重要作用。
+ *
  * @author Rod Johnson
  * @author Juergen Hoeller
  * @since 13 April 2001

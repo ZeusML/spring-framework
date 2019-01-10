@@ -55,6 +55,8 @@ public interface BeanDefinitionRegistry extends AliasRegistry {
 	 * @throws BeanDefinitionStoreException if the BeanDefinition is invalid
 	 * @throws BeanDefinitionOverrideException if there is already a BeanDefinition
 	 * for the specified bean name and we are not allowed to override it
+	 *
+	 *  // 往注册表中注册一个新的 BeanDefinition 实例
 	 * @see GenericBeanDefinition
 	 * @see RootBeanDefinition
 	 * @see ChildBeanDefinition

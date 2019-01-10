@@ -60,6 +60,10 @@ import org.springframework.web.multipart.MultipartResolver;
  */
 public class StandardServletMultipartResolver implements MultipartResolver {
 
+	/**
+	 * 是否延迟解析
+	 * 是否在需要获得对应文件时，在进行文件的解析。
+	 */
 	private boolean resolveLazily = false;
 
 
@@ -94,6 +98,7 @@ public class StandardServletMultipartResolver implements MultipartResolver {
 			// To be on the safe side: explicitly delete the parts,
 			// but only actual file parts (for Resin compatibility)
 			try {
+				// 删除临时的 Part 们
 				for (Part part : request.getParts()) {
 					if (request.getFile(part.getName()) != null) {
 						part.delete();

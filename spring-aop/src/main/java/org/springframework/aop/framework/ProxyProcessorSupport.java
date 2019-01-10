@@ -118,6 +118,7 @@ public class ProxyProcessorSupport extends ProxyConfig implements Ordered, BeanC
 			}
 		}
 		else {
+			//没有合理的代理接口，则使用CGLIB代理
 			proxyFactory.setProxyTargetClass(true);
 		}
 	}
